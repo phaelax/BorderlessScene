@@ -13,15 +13,9 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.effect.DropShadow;
-import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import zimnox.borderless.BorderlessScene;
 
@@ -65,9 +59,7 @@ public class Demo extends Application {
         tableView.getItems().add(new Person("John", "Doe"));
         tableView.getItems().add(new Person("Jane", "Deer"));
 
-        //VBox vbox = new VBox(tableView);
-        
-        
+
 
 		
 		componentLayout.setCenter(tableView);
@@ -86,14 +78,20 @@ public class Demo extends Application {
 
 		
 		
+		
+		
+		
+		
 		BorderlessScene scene = new BorderlessScene(stage, componentLayout, 640, 480);
 		stage.setScene(scene);
 		stage.show();
 		stage.setTitle("Demo");
 		
 		
-		scene.setShadow(new DropShadow(35, Color.BLACK ));
-		//scene.setShadow(new DropShadow(35, Color.CRIMSON));
+		//scene.setShadow(new DropShadow(0, Color.BLACK));
+		//scene.setShadow(new DropShadow(35, Color.BLACK ));
+		scene.setShadow(new DropShadow(35, Color.CRIMSON));
+		
 		
 		
 		scene.setDragControl(header);

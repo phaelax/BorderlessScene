@@ -178,6 +178,7 @@ public class BorderlessScene extends Scene {
 		paneBottomRight.setCursor(Cursor.SE_RESIZE);
 		paneBottomRight.setPrefSize(borderSize, borderSize);
 		
+		// If you want to see the resize borders
 		/*
 		paneRight.setStyle("-fx-background-color:rgba(255,0,0,0.5);");
 		paneLeft.setStyle("-fx-background-color:rgba(255,0,0,0.5);");
