@@ -1,18 +1,20 @@
 package zimnox.borderless;
-
-
 import javafx.beans.value.ChangeListener;
+import javafx.collections.ObservableList;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.effect.Effect;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
@@ -36,9 +38,16 @@ public class BorderlessScene extends Scene {
 	// Amount from the edge that can trigger a resize
 	private double borderSize = 8.0;
 	
+	private boolean isResizable = true;
+	private boolean isMaximized = false;
+	private boolean shadowVisible = true;
+	
+	
 	private Vector2D oldPos = new Vector2D();
 	private Vector2D oldSize = new Vector2D();
 	private Vector2D mouseOffset = new Vector2D();
+	
+	
 	
 	// The node that will cast the shadow
 	private Pane shadowPane = new Pane();
@@ -99,8 +108,6 @@ public class BorderlessScene extends Scene {
 		this.setRoot(init());
 		this.setContent(root);
 		
-		//stage.setMinWidth(width);
-		//stage.setMinHeight(height);
 		stage.initStyle(StageStyle.TRANSPARENT);
 		
 		ChangeListener<Number> stageSizeListener = (observable, oldValue, newValue) ->{
@@ -115,7 +122,111 @@ public class BorderlessScene extends Scene {
 	
 
 	
+	/**
+	 * With an undecorated stage, you must add your own buttons for minimizing, maximizing, and closing the application.
+	 * To minimize the application you can use stage.setIconified(true);
+	 * To maximize, call this method. It acts as a toggle so you don't need to worry about the application's maximize state yourself.
+	 * The stage will match the screen size (also accounts for multiple monitors), disable resizing, and disable the shadow until the 
+	 * method is called again.
+	 * 
+	 */
+	public void maximize() {
+		// Show/hide shadow
+		if (isMaximized) {
+			if (shadowVisible)
+				shadowPane.setEffect(shadow);
+		}else {
+			shadowPane.setEffect(null);
+		}
+				
+		if (!isMaximized) {
+			
+			// Save original bounds
+			oldPos.x = stage.getX();
+			oldPos.y = stage.getY();
+			oldSize.x = stage.getWidth();
+			oldSize.y = stage.getHeight();
+			
+			ObservableList<Screen> screens = Screen.getScreensForRectangle(new Rectangle2D(stage.getX(), stage.getY(), stage.getWidth(), stage.getHeight()));
+			
+			Rectangle2D bounds = screens.get(0).getVisualBounds();
+			
+			stage.setX(bounds.getMinX()-shadow.getWidth());
+			stage.setY(bounds.getMinY()-shadow.getHeight());
+			stage.setWidth(bounds.getWidth()+shadow.getWidth()*2);
+			stage.setHeight(bounds.getHeight()+shadow.getHeight()*2);
+			
+		}else {
+			// Restore window to original bounds
+			stage.setX(oldPos.x);
+			stage.setY(oldPos.y);
+			stage.setWidth(oldSize.x);
+			stage.setHeight(oldSize.y);
+		}
+		
+		// Toggle the maximize
+		isMaximized = !isMaximized;
+		
+		
+		
+	}
 
+	
+	
+	
+	/**
+	 * Toggles the drop shadow on/off
+	 * @param isVisible
+	 */
+	public void setShadowVisible(boolean isVisible) {
+		
+		if (isVisible) {
+			shadowPane.setEffect(shadow);
+		}else {
+			shadowPane.setEffect(null);
+		}
+		shadowVisible = isVisible;
+	}
+	
+	
+	/**
+	 * If shadow is visible
+	 * @return
+	 */
+	public boolean isShadowVisible() {
+		
+		return shadowVisible;
+	}
+	
+	
+	
+	/**
+	 * Is scene maximized
+	 * @return
+	 */
+	public boolean isMaximized() {
+		return isMaximized;
+	}
+	
+	
+	/**
+	 * Is scene resizable
+	 * @return
+	 */
+	public boolean isResizable() {
+		return isResizable;
+	}
+	
+	
+	/**
+	 * Sets whether this scene can be resized or not
+	 * @param b
+	 */
+	public void setResizable(boolean b) {
+		isResizable = b;
+	}
+	
+	
 	
 	/**
 	 * Clips the node with the drop shadow. It allows the shadow to be seen while
@@ -178,7 +289,7 @@ public class BorderlessScene extends Scene {
 		paneBottomRight.setCursor(Cursor.SE_RESIZE);
 		paneBottomRight.setPrefSize(borderSize, borderSize);
 		
-		// If you want to see the resize borders
+		// If you wish to see the resize borders
 		/*
 		paneRight.setStyle("-fx-background-color:rgba(255,0,0,0.5);");
 		paneLeft.setStyle("-fx-background-color:rgba(255,0,0,0.5);");
@@ -212,7 +323,6 @@ public class BorderlessScene extends Scene {
 		root.getChildren().add(1, contentAnchor);
 		root.getChildren().add(2, resizeAnchor);
 		
-		
 		// Apply default drop shadow
 		setShadow(shadow);
 		
@@ -225,9 +335,18 @@ public class BorderlessScene extends Scene {
 	
 
 	
-	
 	/**
 	 * 
+	 * @return Effect
+	 */
+	public Effect getShadow() {
+		return shadow;
+	}
+	
+	
+	
+	/**
+	 * Set the dropshadow effect used for this scene.  Cannot be null
 	 * @param shadow
 	 */
 	public void setShadow(DropShadow shadow) {
@@ -332,14 +451,14 @@ public class BorderlessScene extends Scene {
 	 */
 	public void setDragControl(Node node) {
 		node.setOnMousePressed(e -> {
-			if (e.isPrimaryButtonDown()) {
+			if (e.isPrimaryButtonDown() && !isMaximized) {
 				mouseOffset.x  = e.getScreenX() - stage.getX();
 				mouseOffset.y  = e.getScreenY() - stage.getY();
 			}
 		});
 		
 		node.setOnMouseDragged(e -> {
-			if (e.isPrimaryButtonDown()) {
+			if (e.isPrimaryButtonDown() && !isMaximized) {
 				stage.setX(e.getScreenX() - mouseOffset.x);
 				stage.setY(e.getScreenY() - mouseOffset.y);
 			}
@@ -356,9 +475,8 @@ public class BorderlessScene extends Scene {
 	private void setResizeControl(Pane pane, String direction) {
 
 
-		
 		pane.setOnMouseDragged(e -> {
-			if (e.isPrimaryButtonDown()) {
+			if (e.isPrimaryButtonDown() && isResizable && !isMaximized) {
 				
 				if (direction.endsWith("left")) {
 					double width = stage.getWidth() - e.getScreenX() + stage.getX() + shadow.getWidth();
@@ -396,7 +514,7 @@ public class BorderlessScene extends Scene {
 		
 		
 		pane.setOnMousePressed(e -> {
-			if (e.isPrimaryButtonDown()) {
+			if (e.isPrimaryButtonDown() && isResizable && !isMaximized) {
 				oldPos.x  = stage.getX();
 				oldPos.y  = stage.getY();
 				oldSize.x = stage.getWidth();
@@ -407,17 +525,15 @@ public class BorderlessScene extends Scene {
 	}
 	
 
-	
 	/**
 	 * Simple inner class, not needed for anything outside of BorderlessScene
 	 * @author Phaelax
 	 *
 	 */
-	protected class Vector2D {
+	public class Vector2D {
 		double x;
 		double y;
 	}
 
-	
 
 }
